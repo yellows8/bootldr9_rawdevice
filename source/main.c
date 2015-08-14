@@ -18,6 +18,29 @@ typedef struct {
 
 extern u32 _start, __end__;
 
+void sha256hw_calchash(u32 *outhash, u32 *buf, u32 buf_wordsize)
+{
+	u32 pos;
+	vu32 *SHA_CNT = (vu32*)0x1000a000;
+	vu32 *SHA_HASH = (vu32*)0x1000a040;
+	vu32 *SHA_INFIFO = (vu32*)0x1000a080;
+
+	*SHA_CNT = 0x9;
+
+	pos = 0;
+	do {
+		while((*SHA_CNT) & 0x1);
+		*SHA_INFIFO = buf[pos];
+		pos++;
+	} while(pos<buf_wordsize);
+
+	*SHA_CNT = 0xa;
+	while((*SHA_CNT) & 0x2);
+	while((*SHA_CNT) & 0x1);
+
+	for(pos=0; pos<(0x20>>2); pos++)outhash[pos] = SHA_HASH[pos];
+}
+
 s32 boot_device(u32 device, read_funcptr read_data, u32 basesector, u32 maxsectors)
 {
 	s32 ret = 0, imagefound = 0, entrypoint_firmsection_found;
@@ -39,6 +62,8 @@ s32 boot_device(u32 device, read_funcptr read_data, u32 basesector, u32 maxsecto
 	{0xfff00000, 0xfff04000},
 	{0x3800, 0x7470}//Maked ITCM addrs, resulting in offsets within ITCM.
 	};
+
+	u32 calchash[0x20>>2];
 
 	for(pos=0; pos<5; pos++)errorptr[pos] = 0x44444444;
 
@@ -69,6 +94,19 @@ s32 boot_device(u32 device, read_funcptr read_data, u32 basesector, u32 maxsecto
 			continue;//Since this is only an arm9 bootloader, verify that the FIRM arm11 entrypoint is zero and that the arm9 entrypoint is non-zero.
 		}
 
+		sha256hw_calchash(calchash, firmhdr, 0x100>>2);//With this custom FIRM format, the FIRM "signature" is just a raw sha256 instead of a RSA signature.
+
+		ret = 0;
+		for(pos=0; pos<(0x20>>2); pos++)
+		{
+			if(calchash[pos] != firmhdr[(0x100>>2) + pos])ret = 0x13;
+		}
+		if(ret!=0)
+		{
+			errorptr[0] = 0x13;
+			continue;
+		}
+
 		arm9_entrypoint = (void*)firmhdr[3];
 
 		errorptr[0] = 0;
@@ -87,7 +125,7 @@ s32 boot_device(u32 device, read_funcptr read_data, u32 basesector, u32 maxsecto
 
 		if(!entrypoint_firmsection_found || ret!=0)
 		{
-			if(ret==0)ret = 0x13;
+			if(ret==0)ret = 0x14;
 			errorptr[0] = ret;
 			continue;
 		}
@@ -153,9 +191,19 @@ s32 boot_device(u32 device, read_funcptr read_data, u32 basesector, u32 maxsecto
 
 			ret = read_data(sector0, (section_headers[firmindex].size>>9), (u32*)curaddr);
 
+			if(ret==0)
+			{
+				sha256hw_calchash(calchash, (u32*)curaddr, section_headers[firmindex].size>>2);
+
+				for(pos=0; pos<(0x20>>2); pos++)
+				{
+					if(calchash[pos] != section_headers[firmindex].hash[pos])ret = 0x25;
+				}
+			}
+
 			errorptr[1+firmindex] = ret;
 
-			if(ret!=0)
+			if(ret!=0)//Clear the loaded section when either reading it failed, or the hash is invalid.
 			{
 				for(pos=0; pos<(section_headers[firmindex].size>>2); pos++)((u32*)curaddr)[pos] = 0;
 			}
