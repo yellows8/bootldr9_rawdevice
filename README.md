@@ -16,10 +16,10 @@ This is a 3ds arm9-only bootloader, for loading a payload from the raw sectors o
 
 # Boot procedure
 Once main_() is reached, after doing sdmmc initialization, it attempts to boot from each of the following devices(when the device is actually enabled), in the same order listed below:
-* SD
-* NAND
+* SD (tested)
+* NAND (tested)
 
-For each device it will scan for a valid payload in the first 4MiB of the device image. Whenever *any* errors occur, it will continue scanning with the next sector. The entire payload must be within the already mentioned sector range.
+For each device it will scan for a valid payload in a certain range of sectors. For the sdmmc devices this is the first 4MiB of the device image. Whenever *any* errors occur, it will continue scanning with the next sector. The entire payload must be within the already mentioned sector range.
 
 # Payload format
 The format of the payload is based on offical FIRM(all 4 sections are supported). The payloadbuilder tool in this repo can be used to build payloads in this format.
