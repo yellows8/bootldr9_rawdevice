@@ -13,7 +13,7 @@ Once main_() is reached, after doing sdmmc initialization, it attempts to boot f
 For each device it will scan for a valid payload in the first 4MiB of the device image. Whenever *any* errors occur, it will continue scanning with the next sector. The entire payload must be within the already mentioned sector range.
 
 # Payload format
-The format of the payload is based on offical FIRM(all 4 sections are supported):
+The format of the payload is based on offical FIRM(all 4 sections are supported). The payloadbuilder tool in this repo can be used to build payloads in this format.
 * The u32 at offset 0x4 in the header must match 0x742b4187(in official FIRM this is normally 0x0).
 * The ARM11 entrypoint must be 0x0(since this bootloader is arm9-only), and the ARM9 entrypoint must be 0x0.
 * The sections' offset and size must be 0x200-byte aligned. Address must be 4-byte aligned.
