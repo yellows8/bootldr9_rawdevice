@@ -7,19 +7,23 @@ This is a 3ds arm9-only bootloader, for loading a payload from the raw sectors o
 
 * "DEVICEDISABLE_SD=1" Completely disables using SD.
 * "DEVICEDISABLE_NAND=1" Same as above except for NAND.
+* "DEVICEDISABLE_SPIFLASH=1" Same as above except for spiflash.
 
 * "ENABLE_PADCHECK=1" Enables using the below PADCHECK options. Val in the below options is a bitmask which is checked with the PAD register, the PAD register is only read once. PADCHECK_DISABLEDEVICE_{DEVICE} and PADCHECK_ENABLEDEVICE_{DEVICE} for each device, are all the same besides the affected device. PADCHECK_DISABLEDEVICE_{DEVICE} and PADCHECK_ENABLEDEVICE_{DEVICE} can't be used at the same time for the same device.
 * "PADCHECK_DISABLEDEVICE_SD={val}" Disable using the device when any of the bits in val are set in the PAD register.
 * "PADCHECK_ENABLEDEVICE_SD={val}" Only enable using the device when any of the bits in val are set in the PAD register.
-* "PADCHECK_DISABLEDEVICE_NAND{val}" See above.
-* "PADCHECK_ENABLEDEVICE_NAND{val}" See above.
+* "PADCHECK_DISABLEDEVICE_NAND={val}" See above.
+* "PADCHECK_ENABLEDEVICE_NAND={val}" See above.
+* "PADCHECK_DISABLEDEVICE_SPIFLASH={val}" See above.
+* "PADCHECK_ENABLEDEVICE_SPIFLASH={val}" See above.
 
 # Boot procedure
 Once main_() is reached, after doing sdmmc initialization, it attempts to boot from each of the following devices(when the device is actually enabled), in the same order listed below:
-* SD (tested)
-* NAND (tested)
+* SD, tested. Sector range: first 4MiB of the device image.
+* NAND, tested. Sector range: byte-offset 0x0, end byte-offset 0x12C00.
+* Spiflash, tested. Sector range: byte-offset 0x1f400, end byte-offset 0x20000. This is the only region in spiflash which isn't write-protected - the writable region actually begins at 0x1f300 but due to "sector" alignment start-offset 0x1f400 has to be used here.
 
-For each device it will scan for a valid payload in a certain range of sectors. For the sdmmc devices this is the first 4MiB of the device image. Whenever *any* errors occur, it will continue scanning with the next sector. The entire payload must be within the already mentioned sector range.
+For each device it will scan for a valid payload in a certain range of sectors, see above. Whenever *any* errors occur, it will continue scanning with the next sector. The entire payload must be within the above sector range.
 
 # Payload format
 The format of the payload is based on offical FIRM(all 4 sections are supported). The payloadbuilder tool in this repo can be used to build payloads in this format.

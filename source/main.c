@@ -152,7 +152,7 @@ s32 boot_device(u32 device, read_funcptr read_data, u32 basesector, u32 maxsecto
 				break;
 			}
 
-			if((sector0 >= basesector+maxsectors) || (sector1 >= basesector+maxsectors))//The section sector values must not go out of bounds with the input params sectors range.
+			if((sector0 >= basesector+maxsectors) || (sector1 > basesector+maxsectors))//The section sector values must not go out of bounds with the input params sectors range.
 			{
 				ret = 0x22;
 				break;
@@ -247,9 +247,25 @@ s32 boot_nand()
 	s32 ret = 0;
 
 	ret = unprotboot9_sdmmc_initdevice(unprotboot9_sdmmc_deviceid_nand);
-	if(ret==0)ret = boot_device(1, (read_funcptr)unprotboot9_sdmmc_readrawsectors, 0x0, 0x400000>>9);
+	if(ret==0)ret = boot_device(1, (read_funcptr)unprotboot9_sdmmc_readrawsectors, 0x0, 0x12C00>>9);
 
 	return ret;
+}
+#endif
+
+#ifndef DEVICEDISABLE_SPIFLASH
+s32 spiflash_readrawsectors(u32 sector, u32 numsectors, u32 *out)
+{
+	void (*spi_wififlash_readdata)(u32, u32, u8*) = (void*)0xffff3601;
+
+	spi_wififlash_readdata(sector<<9, numsectors<<9, (u8*)out);
+
+	return 0;
+}
+
+s32 boot_spiflash()
+{
+	return boot_device(2, (read_funcptr)spiflash_readrawsectors, 0x1f400>>9, 0xc00>>9);
 }
 #endif
 
@@ -258,8 +274,8 @@ void main_()
 	s32 ret;
 	u32 pos;
 	s32 *errortable = (s32*)0x08003110;
-	u32 total_devices = 2;
-	bootdevice_funcptr bootdevices[2];
+	u32 total_devices = 3;
+	bootdevice_funcptr bootdevices[3];
 
 	for(pos=0; pos<total_devices; pos++)bootdevices[pos] = NULL;
 
@@ -269,6 +285,10 @@ void main_()
 
 	#ifndef DEVICEDISABLE_NAND
 	bootdevices[1] = boot_nand;
+	#endif
+
+	#ifndef DEVICEDISABLE_SPIFLASH
+	bootdevices[2] = boot_spiflash;
 	#endif
 
 	#ifdef ENABLE_PADCHECK
@@ -296,6 +316,18 @@ void main_()
 			#endif
 
 			if(!(padstate & PADCHECK_ENABLEDEVICE_NAND))bootdevices[1] = NULL;
+		#endif
+
+		#ifdef PADCHECK_DISABLEDEVICE_SPIFLASH
+			if(padstate & PADCHECK_DISABLEDEVICE_SPIFLASH)bootdevices[2] = NULL;
+		#endif
+
+		#ifdef PADCHECK_ENABLEDEVICE_SPIFLASH
+			#ifdef PADCHECK_DISABLEDEVICE_SPIFLASH
+				#error "PADCHECK_DISABLEDEVICE_SPIFLASH and PADCHECK_ENABLEDEVICE_SPIFLASH must not be used at the same time."
+			#endif
+
+			if(!(padstate & PADCHECK_ENABLEDEVICE_SPIFLASH))bootdevices[2] = NULL;
 		#endif
 
 	#endif
