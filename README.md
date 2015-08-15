@@ -5,6 +5,8 @@ This is a 3ds arm9-only bootloader, for loading a payload from the raw sectors o
 * "ENABLE_RETURNFROMCRT0=1" When no payload was successfully booted, or when the payload returned, return from the crt0 to the LR from the time of loader entry, instead executing an infinite loop.
 * "UNPROTBOOT9_LIBPATH={path}" This should be used to specify the path for the unprotboot9_sdmmc library, aka the path for that repo.
 
+* "ENABLE_CONTINUEWHEN_PAYLOADCALLFAILS=1" When used, set the retval returned by boot_device() to the value returned from calling arm9_entrypoint(), if that ever returns. This will result in continuing to attempt to boot from the rest of the devices, if that retval from the payload is non-zero.
+
 * "DEVICEDISABLE_SD=1" Completely disables using SD.
 * "DEVICEDISABLE_NAND=1" Same as above except for NAND.
 * "DEVICEDISABLE_SPIFLASH=1" Same as above except for spiflash.

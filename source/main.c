@@ -49,7 +49,7 @@ s32 boot_device(u32 device, read_funcptr read_data, u32 basesector, u32 maxsecto
 	u32 sector0, sector1;
 	u32 *errorptr = (u32*)(0x08003120 + device*0x214);
 
-	void (*arm9_entrypoint)();
+	s32 (*arm9_entrypoint)();
 
 	u32 *firmhdr = &errorptr[0x14>>2];
 
@@ -224,9 +224,15 @@ s32 boot_device(u32 device, read_funcptr read_data, u32 basesector, u32 maxsecto
 
 	if(imagefound==0)return 0x10;
 
-	arm9_entrypoint();
+	ret = 0;
 
-	return 0;
+	#ifndef ENABLE_CONTINUEWHEN_PAYLOADCALLFAILS
+	arm9_entrypoint();
+	#else
+	ret = arm9_entrypoint();
+	#endif
+
+	return ret;
 }
 
 #ifndef DEVICEDISABLE_SD
@@ -269,7 +275,7 @@ s32 boot_spiflash()
 }
 #endif
 
-void main_()
+int main_()
 {
 	s32 ret;
 	u32 pos;
@@ -334,14 +340,17 @@ void main_()
 
 	ret = unprotboot9_sdmmc_initialize();
 	errortable[0] = (u32)ret;
-	if(ret)return;
+	if(ret)return ret;
 
 	for(pos=0; pos<total_devices; pos++)
 	{
 		ret = 0x414e5644;
 		if(bootdevices[pos])ret = bootdevices[pos]();
 		errortable[1+pos] = ret;
+
 		if(ret==0)break;
 	}
+
+	return ret;
 }
 
