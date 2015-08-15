@@ -6,7 +6,8 @@
 
 #include <unprotboot9_sdmmc.h>
 
-typedef int (*read_funcptr)(u32, u32, u32*);//params: u32 sector, u32 numsectors, u32 *out
+typedef s32 (*bootdevice_funcptr)();
+typedef s32 (*read_funcptr)(u32, u32, u32*);//params: u32 sector, u32 numsectors, u32 *out
 
 typedef struct {
 	u32 offset;
@@ -228,6 +229,7 @@ s32 boot_device(u32 device, read_funcptr read_data, u32 basesector, u32 maxsecto
 	return 0;
 }
 
+#ifndef DEVICEDISABLE_SD
 s32 boot_sd()
 {
 	s32 ret = 0;
@@ -237,7 +239,9 @@ s32 boot_sd()
 
 	return ret;
 }
+#endif
 
+#ifndef DEVICEDISABLE_NAND
 s32 boot_nand()
 {
 	s32 ret = 0;
@@ -247,21 +251,65 @@ s32 boot_nand()
 
 	return ret;
 }
+#endif
 
 void main_()
 {
 	s32 ret;
+	u32 pos;
+	s32 *errortable = (s32*)0x08003110;
+	u32 total_devices = 2;
+	bootdevice_funcptr bootdevices[2];
+
+	for(pos=0; pos<total_devices; pos++)bootdevices[pos] = NULL;
+
+	#ifndef DEVICEDISABLE_SD
+	bootdevices[0] = boot_sd;
+	#endif
+
+	#ifndef DEVICEDISABLE_NAND
+	bootdevices[1] = boot_nand;
+	#endif
+
+	#ifdef ENABLE_PADCHECK
+	u32 padstate = *((u32*)0x10146000);
+	padstate = ~padstate;
+
+		#ifdef PADCHECK_DISABLEDEVICE_SD
+			if(padstate & PADCHECK_DISABLEDEVICE_SD)bootdevices[0] = NULL;
+		#endif
+
+		#ifdef PADCHECK_ENABLEDEVICE_SD
+			#ifdef PADCHECK_DISABLEDEVICE_SD
+				#error "PADCHECK_DISABLEDEVICE_SD and PADCHECK_ENABLEDEVICE_SD must not be used at the same time."
+			#endif
+			if(!(padstate & PADCHECK_ENABLEDEVICE_SD))bootdevices[0] = NULL;
+		#endif
+
+		#ifdef PADCHECK_DISABLEDEVICE_NAND
+			if(padstate & PADCHECK_DISABLEDEVICE_NAND)bootdevices[1] = NULL;
+		#endif
+
+		#ifdef PADCHECK_ENABLEDEVICE_NAND
+			#ifdef PADCHECK_DISABLEDEVICE_NAND
+				#error "PADCHECK_DISABLEDEVICE_NAND and PADCHECK_ENABLEDEVICE_NAND must not be used at the same time."
+			#endif
+
+			if(!(padstate & PADCHECK_ENABLEDEVICE_NAND))bootdevices[1] = NULL;
+		#endif
+
+	#endif
 
 	ret = unprotboot9_sdmmc_initialize();
-	*((u32*)0x08003110) = (u32)ret;
+	errortable[0] = (u32)ret;
 	if(ret)return;
 
-	ret = boot_sd();
-	*((u32*)0x08003114) = ret;
-	if(ret==0)return;
-
-	ret = boot_nand();
-	*((u32*)0x08003118) = ret;
-	if(ret==0)return;
+	for(pos=0; pos<total_devices; pos++)
+	{
+		ret = 0x414e5644;
+		if(bootdevices[pos])ret = bootdevices[pos]();
+		errortable[1+pos] = ret;
+		if(ret==0)break;
+	}
 }
 

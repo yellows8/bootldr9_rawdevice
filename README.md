@@ -5,8 +5,17 @@ This is a 3ds arm9-only bootloader, for loading a payload from the raw sectors o
 * "ENABLE_RETURNFROMCRT0=1" When no payload was successfully booted, or when the payload returned, return from the crt0 to the LR from the time of loader entry, instead executing an infinite loop.
 * "UNPROTBOOT9_LIBPATH={path}" This should be used to specify the path for the unprotboot9_sdmmc library, aka the path for that repo.
 
+* "DEVICEDISABLE_SD=1" Completely disables using SD.
+* "DEVICEDISABLE_NAND=1" Same as above except for NAND.
+
+* "ENABLE_PADCHECK=1" Enables using the below PADCHECK options. Val in the below options is a bitmask which is checked with the PAD register, the PAD register is only read once. PADCHECK_DISABLEDEVICE_{DEVICE} and PADCHECK_ENABLEDEVICE_{DEVICE} for each device, are all the same besides the affected device. PADCHECK_DISABLEDEVICE_{DEVICE} and PADCHECK_ENABLEDEVICE_{DEVICE} can't be used at the same time for the same device.
+* "PADCHECK_DISABLEDEVICE_SD={val}" Disable using the device when any of the bits in val are set in the PAD register.
+* "PADCHECK_ENABLEDEVICE_SD={val}" Only enable using the device when any of the bits in val are set in the PAD register.
+* "PADCHECK_DISABLEDEVICE_NAND{val}" See above.
+* "PADCHECK_ENABLEDEVICE_NAND{val}" See above.
+
 # Boot procedure
-Once main_() is reached, after doing sdmmc initialization, it attempts to boot from each of the following devices, in the same order listed below:
+Once main_() is reached, after doing sdmmc initialization, it attempts to boot from each of the following devices(when the device is actually enabled), in the same order listed below:
 * SD
 * NAND
 

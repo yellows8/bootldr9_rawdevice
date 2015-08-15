@@ -31,7 +31,33 @@ ifneq ($(strip $(ENABLE_RETURNFROMCRT0)),)
 	DEFINES	:=	$(DEFINES) -DENABLE_RETURNFROMCRT0
 endif
 
-LDNAME	:=	bootldr9_rawdevice.ld
+ifneq ($(strip $(DEVICEDISABLE_SD)),)
+	DEFINES	:=	$(DEFINES) -DDEVICEDISABLE_SD
+endif
+
+ifneq ($(strip $(DEVICEDISABLE_NAND)),)
+	DEFINES	:=	$(DEFINES) -DDEVICEDISABLE_NAND
+endif
+
+ifneq ($(strip $(ENABLE_PADCHECK)),)
+	DEFINES	:=	$(DEFINES) -DENABLE_PADCHECK
+endif
+
+ifneq ($(strip $(PADCHECK_DISABLEDEVICE_SD)),)
+	DEFINES	:=	$(DEFINES) -DPADCHECK_DISABLEDEVICE_SD=$(PADCHECK_DISABLEDEVICE_SD)
+endif
+
+ifneq ($(strip $(PADCHECK_ENABLEDEVICE_SD)),)
+	DEFINES	:=	$(DEFINES) -DPADCHECK_ENABLEDEVICE_SD=$(PADCHECK_ENABLEDEVICE_SD)
+endif
+
+ifneq ($(strip $(PADCHECK_DISABLEDEVICE_NAND)),)
+	DEFINES	:=	$(DEFINES) -DPADCHECK_DISABLEDEVICE_NAND=$(PADCHECK_DISABLEDEVICE_NAND)
+endif
+
+ifneq ($(strip $(PADCHECK_ENABLEDEVICE_NAND)),)
+	DEFINES	:=	$(DEFINES) -DPADCHECK_ENABLEDEVICE_NAND=$(PADCHECK_ENABLEDEVICE_NAND)
+endif
 
 ARCH	:=	-marm -fpie
 
@@ -44,7 +70,7 @@ CFLAGS	+=	$(INCLUDE) -DARM9 $(DEFINES)
 CXXFLAGS	:= $(CFLAGS) -fno-rtti -fno-exceptions
 
 ASFLAGS	:=	-g $(ARCH) $(DEFINES)
-LDFLAGS	=	-nostartfiles -T../$(LDNAME) -g $(ARCH) -Wl,-Map,$(notdir $*.map)
+LDFLAGS	=	-nostartfiles -T../bootldr9_rawdevice.ld -g $(ARCH) -Wl,-Map,$(notdir $*.map)
 
 #---------------------------------------------------------------------------------
 # any extra libraries we wish to link with the project (order is important)
