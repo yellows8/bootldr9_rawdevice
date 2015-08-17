@@ -168,7 +168,11 @@ s32 boot_device(u32 device, read_funcptr read_data, u32 basesector, u32 maxsecto
 			for(pos=0; pos<6; pos++)
 			{
 				checkaddr = curaddr;
-				if(pos==5)checkaddr &= 0x7fff;
+				if(pos==5)
+				{
+					if(checkaddr >= 0x08000000)break;
+					checkaddr &= 0x7fff;
+				}
 
 				if(checkaddr >= firmsections_memrangeblacklist[pos][0] && checkaddr < firmsections_memrangeblacklist[pos][1])
 				{
