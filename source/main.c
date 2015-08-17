@@ -61,7 +61,7 @@ s32 boot_device(u32 device, read_funcptr read_data, u32 basesector, u32 maxsecto
 	{0x08100000-0x1000, 0x08100000},//stack
 	{0x08000000, 0x08000040},
 	{0xfff00000, 0xfff04000},
-	{0x3800, 0x7470}//Maked ITCM addrs, resulting in offsets within ITCM.
+	{0x3800, 0x7470}//Masked ITCM addrs, resulting in offsets within ITCM.
 	};
 
 	u32 calchash[0x20>>2];
