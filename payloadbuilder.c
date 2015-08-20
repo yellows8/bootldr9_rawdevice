@@ -80,6 +80,7 @@ int main(int argc, char **argv)
 
 	header[0] = 0x4d524946;//Init magic-nums + arm9 entrypoint.
 	header[1] = 0x742b4187;
+	header[0x3c>>2] = 0x1c083e7f;
 	header[3] = binaddr;
 
 	header[0x40>>2] = 0x200;//Init section0.

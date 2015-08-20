@@ -29,7 +29,7 @@ For each device it will scan for a valid payload in a certain range of sectors, 
 
 # Payload format
 The format of the payload is based on offical FIRM(all 4 sections are supported). The payloadbuilder tool in this repo can be used to build payloads in this format.
-* The u32 at offset 0x4 in the header must match 0x742b4187(in official FIRM this is normally 0x0).
+* The u32 at offset 0x4 in the header must match 0x742b4187(in official FIRM this is normally 0x0). The u32 at offset 0x3c in the header must match 0x1c083e7f(signature type).
 * The ARM11 entrypoint must be 0x0(since this bootloader is arm9-only), and the ARM9 entrypoint must be 0x0.
 * The sections' offset and size must be 0x200-byte aligned. Address must be 4-byte aligned.
 * Like offical FIRM loading code, the sections' hashes are all validated.

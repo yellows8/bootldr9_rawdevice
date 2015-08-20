@@ -89,6 +89,12 @@ s32 boot_device(u32 device, read_funcptr read_data, u32 basesector, u32 maxsecto
 			continue;//Verify that firmhdr[1] matches this custom magicnum.
 		}
 
+		if(firmhdr[0x3c>>2] != 0x1c083e7f)
+		{
+			errorptr[0] = 0x11;
+			continue;//Verify that the u32 at firmhdr+0x3c matches this custom magicnum(signature type).
+		}
+
 		if(firmhdr[2]!=0 || firmhdr[3]==0)
 		{
 			errorptr[0] = 0x12;
