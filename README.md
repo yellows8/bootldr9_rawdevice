@@ -1,4 +1,4 @@
-This is a 3ds arm9-only bootloader, for loading a payload from the raw sectors of multiple devices. This bootloader is intended to be as small as possible, hence why only raw sectors are read here.  
+This is a 3ds arm9-only bootloader(the binary is position-independent), for loading a payload from the raw sectors of multiple devices. This bootloader is intended to be as small as possible, hence why only raw sectors are read here. The following library is required: https://github.com/yellows8/unprotboot9_sdmmc  
 
 # Building
 "make" can be used with the following options:
@@ -30,9 +30,9 @@ For each device it will scan for a valid payload in a certain range of sectors, 
 # Payload format
 The format of the payload is based on offical FIRM(all 4 sections are supported). The payloadbuilder tool in this repo can be used to build payloads in this format.
 * The u32 at offset 0x4 in the header must match 0x742b4187(in official FIRM this is normally 0x0). The u32 at offset 0x3c in the header must match 0x1c083e7f(signature type).
-* The ARM11 entrypoint must be 0x0(since this bootloader is arm9-only), and the ARM9 entrypoint must be 0x0.
+* The ARM11 entrypoint must be 0x0(since this bootloader is arm9-only), and the ARM9 entrypoint must be non-zero.
 * The sections' offset and size must be 0x200-byte aligned. Address must be 4-byte aligned.
 * Like offical FIRM loading code, the sections' hashes are all validated.
 * Instead of a RSA signature, a raw sha256 hash from the "signature" over the first 0x100-bytes of the header is validated.
-* MPU is disabled and the sections are loaded with CPU-memcopy internally, hence the only memory that a section can't load to is blacklisted memory ranges. These are: all memory used by this loader, areas of ITCM which are used by the system, and the entire DTCM.
+* MPU is disabled and the sections are loaded with CPU-memcopy internally, hence the only memory that a section can't load to is blacklisted memory ranges. This includes: all memory used by this loader, areas of ITCM which are used by the system, and the entire DTCM.
 
