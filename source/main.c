@@ -17,7 +17,7 @@ typedef struct {
 	u32 hash[0x20>>2];
 } firm_sectionhdr;
 
-extern u32 _start, __end__;
+extern u32 _start[], __end__[];
 
 void sha256hw_calchash(u32 *outhash, u32 *buf, u32 buf_wordsize)
 {
